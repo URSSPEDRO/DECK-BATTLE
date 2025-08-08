@@ -1,0 +1,2039 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deck Battle</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #2c3e50;
+            color: white;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        /* Classes para o novo menu */
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #2c3e50;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .screen.show {
+            display: flex;
+        }
+
+        .menu-button {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            margin: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            background-color: #3498db;
+            color: white;
+            transition: background-color 0.3s;
+        }
+
+        .menu-button:hover {
+            background-color: #2980b9;
+        }
+        
+        .how-to-play-text {
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        
+        .how-to-play-text h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            gap: 20px;
+        }
+        
+        #win-counter {
+            background-color: #4a657c;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .gacha-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .gacha-button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            background-color: #3498db;
+            color: white;
+            transition: background-color 0.3s;
+        }
+
+        .gacha-button:hover:not(:disabled) {
+            background-color: #2980b9;
+        }
+        
+        .gacha-button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        #result-card {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 300px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease-in-out;
+            border: 3px solid transparent;
+            box-sizing: border-box;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        #result-card.show {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        #card-image {
+            width: 200px;
+            height: 200px;
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+
+        #card-name {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .card-rarity {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card-level {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 5px;
+            color: #ffd700;
+        }
+
+        .star {
+            color: #ffd700;
+            margin: 0 2px;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        .rarity-common { background-color: #7f8c8d; border-color: #bdc3c7; }
+        .rarity-rare { background-color: #2ecc71; border-color: #27ae60; }
+        .rarity-epic { background-color: #9b59b6; border-color: #8e44ad; }
+        .rarity-legendary { background-color: #f1c40f; border-color: #f39c12; }
+        .rarity-mythic { 
+            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            border-color: white;
+            animation: rainbow 5s linear infinite;
+        }
+        .rarity-divino { background-color: #000; border-color: #fff; }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .inventory-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .inventory-container.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .inventory-container h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        
+        .inventory-menu {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .inventory-menu .gacha-button {
+            padding: 10px 20px;
+            font-size: 1em;
+        }
+        
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            width: 80%;
+            max-width: 1200px;
+        }
+
+        .inventory-card {
+            width: 150px;
+            height: 200px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            text-align: center;
+            border: 2px solid transparent;
+            box-sizing: border-box;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .inventory-card.locked::after {
+            content: "🔒";
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 1.5em;
+            text-shadow: 0 0 5px black;
+        }
+        
+        .inventory-card.selected-for-sell {
+            border: 2px solid red;
+            box-shadow: 0 0 10px red;
+        }
+        
+        .inventory-card.selected-for-sell.locked {
+            border: 2px solid #888;
+        }
+        
+        .inventory-card.selected-for-merge-target {
+            border: 3px solid #ffd700;
+            box-shadow: 0 0 15px #ffd700;
+        }
+        
+        .inventory-card.selected-for-merge-fuel {
+            border: 2px solid #2ecc71;
+            box-shadow: 0 0 10px #2ecc71;
+        }
+
+        .inventory-card-name {
+            font-size: 1em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .inventory-card-rarity {
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+        
+        .inventory-card-image {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .inventory-card .pd-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .inventory-card .level-display {
+            font-size: 0.9em;
+            color: #ffd700;
+            margin-top: 2px;
+        }
+        
+        .sell-info, .lock-info, .merge-info {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+
+        .sell-buttons, .merge-buttons {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .merge-progress-bar {
+            width: 100%;
+            height: 15px;
+            background-color: #555;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+        
+        .merge-progress {
+            height: 100%;
+            background-color: #3498db;
+            border-radius: 5px;
+            transition: width 0.3s;
+        }
+
+        /* Cores de raridade para o inventário */
+        .inventory-card.rarity-common { background-color: #7f8c8d; border-color: #bdc3c7; }
+        .inventory-card.rarity-rare { background-color: #2ecc71; border-color: #27ae60; }
+        .inventory-card.rarity-epic { background-color: #9b59b6; border-color: #8e44ad; }
+        .inventory-card.rarity-legendary { background-color: #f1c40f; border-color: #f39c12; }
+        .inventory-card.rarity-mythic { 
+            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            border-color: white;
+        }
+        .inventory-card.rarity-divino { background-color: #000; border-color: #fff; }
+
+        /* BATTLE CONTAINER */
+        .battle-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+            padding: 20px;
+            box-sizing: border-box;
+            animation: fadeIn 0.5s ease-in-out;
+            text-align: center;
+        }
+
+        .battle-container.show {
+            display: flex;
+        }
+
+        .battle-header h2 {
+            font-size: 2.5em;
+            margin: 0;
+        }
+
+        .battle-header h3 {
+            font-size: 1.5em;
+        }
+
+        .battle-arena {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 50px;
+            margin: 20px 0;
+        }
+
+        .arena-card {
+            width: 200px;
+            height: 280px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            text-align: center;
+            border: 3px solid transparent;
+            font-size: 1.2em;
+            transition: opacity 0.5s;
+        }
+        
+        #player-drop-zone {
+            border: 3px dashed #3498db;
+        }
+
+        .battle-arena span {
+            font-size: 4em;
+            font-weight: bold;
+        }
+        
+        .player-hand {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .hand-card {
+            width: 120px;
+            height: 160px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            text-align: center;
+            border: 2px solid transparent;
+            box-sizing: border-box;
+            font-size: 0.9em;
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .hand-card:active {
+            cursor: grabbing;
+        }
+
+        .hand-card.played {
+            pointer-events: none;
+            opacity: 0.5;
+            filter: grayscale(100%);
+        }
+        
+        .hand-card .card-name {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .hand-card .card-pd {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #ffeb3b;
+        }
+        
+        .battle-log {
+            margin-top: 20px;
+            font-size: 1.2em;
+            min-height: 30px;
+        }
+
+        .battle-score {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .winner { color: #2ecc71; }
+        .loser { color: #e74c3c; }
+        .draw { color: #f1c40f; }
+
+        /* LOJA (RETRABALHADO) */
+        #shop-toggle-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 1em;
+            font-weight: bold;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 101;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        #shop-container {
+            position: fixed;
+            top: 60px;
+            left: 20px;
+            width: 350px;
+            max-height: 80vh;
+            padding: 20px;
+            background-color: #34495e;
+            border: 2px solid #2980b9;
+            border-radius: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            overflow-y: auto;
+            animation: fadeIn 0.5s;
+        }
+        
+        #shop-container.open {
+            display: flex;
+        }
+        
+        #shop-container h3 {
+            margin-top: 0;
+            font-size: 2em;
+            border-bottom: 2px solid #2980b9;
+            padding-bottom: 10px;
+        }
+        
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2c3e50;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .shop-item:hover:not(.disabled) {
+            background-color: #4a657c;
+        }
+        
+        .shop-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .shop-item .item-info {
+            text-align: left;
+        }
+        
+        .shop-item .item-name {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .shop-item .item-cost {
+            font-size: 1.1em;
+            color: #ffd700;
+        }
+
+        #shop-close {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        
+        #coin-bonus-timer, #luck-bonus-timer {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 5px 10px;
+            background-color: #2c3e50;
+            border: 2px solid #ffd700;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        #luck-bonus-timer {
+            top: 60px;
+            border-color: #9b59b6;
+        }
+
+        /* TELA DE SELEÇÃO DE CARTAS */
+        #card-selection-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            z-index: 200;
+        }
+        
+        #card-selection-container.show {
+            display: flex;
+        }
+        
+        .card-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            width: 80%;
+            max-width: 1200px;
+            max-height: 40vh;
+            overflow-y: auto;
+            border: 2px solid #3498db;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .battle-deck-slots {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .deck-slot {
+            width: 120px;
+            height: 160px;
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            padding: 8px;
+        }
+        
+        .deck-slot.full {
+            border: 2px solid #2ecc71;
+        }
+
+        .selection-card {
+            width: 120px;
+            height: 160px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            text-align: center;
+            border: 2px solid transparent;
+            box-sizing: border-box;
+            font-size: 0.9em;
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .selection-card.selected {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: default;
+        }
+
+        .selection-card .card-name {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .selection-card .card-pd {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #ffeb3b;
+        }
+        
+        .selection-buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        /* NOVO: Modal de código */
+        #code-redeem-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            z-index: 300;
+        }
+        
+        #code-redeem-modal.show {
+            display: flex;
+        }
+
+        #code-redeem-modal h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        #code-redeem-modal input {
+            padding: 10px;
+            font-size: 1.2em;
+            width: 300px;
+            text-align: center;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        #code-redeem-modal button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: white;
+        }
+        
+        #code-message {
+            font-size: 1.2em;
+            height: 25px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="main-menu" class="screen show">
+        <h1>Deck Battle</h1>
+        <button id="play-button" class="menu-button">Jogar</button>
+        <button id="how-to-play-button" class="menu-button">Como Jogar</button>
+        <button id="code-button" class="menu-button">Código</button>
+    </div>
+
+    <div id="how-to-play" class="screen">
+        <div class="how-to-play-text">
+            <h2>Como Jogar</h2>
+            <p><strong>Objetivo:</strong> Colecione as cartas mais fortes, use a Roleta Gacha para conseguir cartas raras e batalhe contra o computador para ganhar moedas!</p>
+            <p><strong>Gacha:</strong> Use suas moedas para roletar cartas de diferentes raridades. Mantenha as que você gosta e venda as repetidas para ganhar mais moedas.</p>
+            <p><strong>Inventário:</strong> Pressione a tecla 'E' para abrir seu inventário. Lá você pode vender, bloquear ou fundir cartas para aprimorá-las.</p>
+            <p><strong>Batalha:</strong> Pressione a tecla '→' para iniciar uma batalha. Selecione 5 cartas do seu inventário para montar seu deck e enfrente o computador. A carta com o maior PD (Ponto de Dano) vence o turno.</p>
+            <p><strong>Loja:</strong> Clique no ícone 'Loja' no canto superior esquerdo para acessar a loja e comprar cartas raras ou bônus especiais.</p>
+        </div>
+        <button id="back-to-menu-button" class="menu-button">Voltar</button>
+    </div>
+
+    <div id="main-game" class="screen">
+        <div class="top-bar">
+            Moedas: <span id="coin-count">500</span>
+            <div id="win-counter">Vitórias: <span id="player-total-wins">0</span>/10</div>
+        </div>
+
+        <div id="coin-bonus-timer">
+            Bônus 2x Moedas: <span id="bonus-time-left"></span>
+        </div>
+        
+        <div id="luck-bonus-timer">
+            Bônus 2x Sorte: <span id="luck-time-left"></span>
+        </div>
+        
+        <button id="shop-toggle-button">Loja</button>
+
+        <div id="shop-container">
+            <span id="shop-close">&times;</span>
+            <h3>Loja</h3>
+            <div id="shop-items-container"></div>
+        </div>
+
+        <div class="game-container">
+            <h1>Deck Battle</h1>
+            <div class="gacha-buttons">
+                <button id="gacha-button" class="gacha-button">Roletar Normal (50 Moedas)</button>
+                <button id="buy-gacha-2-button" class="gacha-button" style="display: none;">Comprar Roleta Forte (1000 Moedas)</button>
+                <button id="gacha-2-button" class="gacha-button" style="display: none;">Roletar Forte (200 Moedas)</button>
+            </div>
+            
+            <div id="result-card">
+                <div id="card-image"></div>
+                <div id="card-name"></div>
+                <div id="card-rarity" class="card-rarity"></div>
+            </div>
+        </div>
+
+        <div id="inventory-container" class="inventory-container">
+            <h2>Inventário (Pressione 'E' para fechar)</h2>
+            <div class="inventory-menu">
+                <button id="sell-button" class="gacha-button">Vender Cartas</button>
+                <button id="lock-button" class="gacha-button">Bloquear Cartas</button>
+                <button id="merge-button" class="gacha-button">Fundir</button>
+            </div>
+
+            <div id="sell-info" class="sell-info" style="display: none;">
+                Selecione as cartas para vender. Total a receber: <span id="sell-total-coins">0</span> moedas.
+                <div class="sell-buttons">
+                    <button id="confirm-sell-button" class="gacha-button" style="background-color: #e74c3c;">Confirmar Venda</button>
+                    <button id="cancel-sell-button" class="gacha-button">Cancelar</button>
+                </div>
+            </div>
+            
+            <div id="lock-info" class="lock-info" style="display: none;">
+                Selecione as cartas para bloquear/desbloquear.
+                <div class="sell-buttons">
+                    <button id="done-lock-button" class="gacha-button">Concluir</button>
+                </div>
+            </div>
+            
+            <div id="merge-info" class="merge-info" style="display: none;">
+                <p id="merge-step-info">Passo 1: Clique na carta para aprimorar.</p>
+                <div class="merge-buttons">
+                    <button id="confirm-merge-button" class="gacha-button" style="background-color: #2ecc71; display: none;">Confirmar Fusão</button>
+                    <button id="cancel-merge-button" class="gacha-button">Cancelar</button>
+                </div>
+            </div>
+
+            <div id="inventory-grid" class="inventory-grid"></div>
+        </div>
+
+        <div id="battle-container" class="battle-container">
+            <div class="battle-header">
+                <h2>Batalha! (Pressione → para fechar)</h2>
+                <div class="battle-score">Placar: <span id="player-score">0</span> x <span id="bot-score">0</span></div>
+                <h3 id="battle-info"></h3>
+            </div>
+
+            <div class="battle-arena">
+                <div id="bot-played-card" class="arena-card"></div>
+                <span>VS</span>
+                <div id="player-drop-zone" class="arena-card"></div>
+            </div>
+
+            <div class="player-side">
+                <h3>Arraste sua carta para o centro</h3>
+                <div id="player-hand" class="player-hand"></div>
+            </div>
+            
+            <div id="battle-log" class="battle-log"></div>
+        </div>
+
+        <div id="card-selection-container">
+            <h2>Selecione 5 cartas para a batalha</h2>
+            <div class="battle-deck-slots" id="battle-deck-slots">
+                <div class="deck-slot" data-slot-index="0"></div>
+                <div class="deck-slot" data-slot-index="1"></div>
+                <div class="deck-slot" data-slot-index="2"></div>
+                <div class="deck-slot" data-slot-index="3"></div>
+                <div class="deck-slot" data-slot-index="4"></div>
+            </div>
+            <p>Arraste as cartas do seu inventário para os slots acima.</p>
+            <div class="card-selection-grid" id="card-selection-grid"></div>
+            <div class="selection-buttons">
+                <button id="start-battle-button" class="gacha-button">Iniciar Batalha</button>
+                <button id="cancel-selection-button" class="gacha-button">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="code-redeem-modal" class="screen">
+        <h2>Resgatar Código</h2>
+        <input type="text" id="code-input" placeholder="Digite seu código">
+        <div id="code-message"></div>
+        <button id="redeem-code-button">Resgatar</button>
+        <button id="close-code-modal-button" class="menu-button">Voltar</button>
+    </div>
+
+    <script>
+        // Dados do jogo
+        const cards_gacha1 = [
+            // Comum (60%)
+            { name: "Golem de Terra", rarity: "Comum", stars: 1, color: "rarity-common", prob: 60, pd: 26 },
+            { name: "Arqueiro Humano", rarity: "Comum", stars: 1, color: "rarity-common", prob: 60, pd: 22 },
+            // Rara (26%)
+            { name: "Dragão Sábio", rarity: "Rara", stars: 2, color: "rarity-rare", prob: 26, pd: 32 },
+            { name: "Elfa de Luz", rarity: "Rara", stars: 2, color: "rarity-rare", prob: 26, pd: 27 },
+            // Épica (10%)
+            { name: "Maga Negra", rarity: "Épica", stars: 3, color: "rarity-epic", prob: 10, pd: 39 },
+            // Lendária (3%)
+            { name: "Fênix das Preces", rarity: "Lendária", stars: 4, color: "rarity-legendary", prob: 3, pd: 41 },
+            // Mítica (1%)
+            { name: "Necromante Impiedoso", rarity: "Mítica", stars: 5, color: "rarity-mythic", prob: 1, pd: 60 }
+        ];
+
+        const cards_gacha2 = [
+            // Comum (50%)
+            { name: "Tigre Branco", rarity: "Comum", stars: 1, color: "rarity-common", prob: 50, pd: 30 },
+            { name: "Ninja Letal", rarity: "Comum", stars: 1, color: "rarity-common", prob: 50, pd: 30 },
+            // Rara (30%)
+            { name: "Ogro Virtuoso", rarity: "Rara", stars: 2, color: "rarity-rare", prob: 30, pd: 32 },
+            { name: "Esqueleto das Matas", rarity: "Rara", stars: 2, color: "rarity-rare", prob: 30, pd: 35 },
+            // Épica (10%)
+            { name: "Rei de Gelo", rarity: "Épica", stars: 3, color: "rarity-epic", prob: 10, pd: 45 },
+            // Lendária (8%)
+            { name: "Demônio de Guerra", rarity: "Lendária", stars: 4, color: "rarity-legendary", prob: 8, pd: 60 },
+            // Mítica (1.5%)
+            { name: "Arcanjo", rarity: "Mítica", stars: 5, color: "rarity-mythic", prob: 1.5, pd: 81 },
+            // Divina (0.5%)
+            { name: "Kyubi", rarity: "Divino", stars: 6, color: "rarity-divino", prob: 0.5, pd: 100 }
+        ];
+        
+        const cards_gacha1_lucky = cards_gacha1.map(card => {
+            const newCard = { ...card };
+            if (card.rarity !== 'Comum') {
+                newCard.prob *= 2;
+            }
+            return newCard;
+        });
+
+        const cards_gacha2_lucky = cards_gacha2.map(card => {
+            const newCard = { ...card };
+            if (card.rarity !== 'Comum') {
+                newCard.prob *= 2;
+            }
+            return newCard;
+        });
+
+        const raritySellValues = {
+            "Comum": 10,
+            "Rara": 15,
+            "Épica": 21,
+            "Lendária": 100,
+            "Mítica": 200,
+            "Divino": 320
+        };
+        
+        const rarityXpValues = {
+            "Comum": 10,
+            "Rara": 20,
+            "Épica": 50,
+            "Lendária": 150,
+            "Mítica": 500,
+            "Divino": 1000
+        };
+        
+        const xpNeededForLevel = {
+            1: 100,
+            2: 250,
+            3: 500,
+            4: 1000,
+            5: 2000
+        };
+        
+        const MAX_CARD_LEVEL = 5;
+
+        // Estado do jogo
+        let inventory = [];
+        const INVENTORY_LIMIT = 50;
+        const BATTLE_CARD_LIMIT = 5;
+        
+        let coins = 500;
+        const GACHA_COST_1 = 50;
+        const GACHA_COST_2 = 200;
+        const VICTORY_REWARD_GACHA1 = 120;
+        const VICTORY_REWARD_GACHA2 = 410;
+        let playerTotalWins = 0;
+        const WIN_UNLOCK_THRESHOLD = 10;
+        let isGacha2Purchased = false;
+        let botCardDeck = cards_gacha1;
+
+        let playerBattleCards = [];
+        let botBattleCards = [];
+        let playerScore = 0;
+        let botScore = 0;
+        let currentTurn = 0;
+        let botPlayedCard = null;
+        let isTurnInProgress = false;
+        let nextCardId = 0;
+
+        let coinBonusTimer = null;
+        let isCoinBonusActive = false;
+        let luckBonusTimer = null;
+        let isLuckBonusActive = false;
+        
+        // NOVO: estado do código de resgate
+        let isCodeRedeemed = false;
+        const REDEEM_CODE = 'DECKBATTLEBETA';
+        const REDEEM_REWARD = 100000;
+
+        const shopItems_gacha1 = [
+            { name: "Maga Negra", rarity: "Épica", cost: 150 },
+            { name: "Fênix das Preces", rarity: "Lendária", cost: 1200 },
+            { name: "Necromante Impiedoso", rarity: "Mítica", cost: 5000 },
+            { name: "2x Moedas (20 min)", rarity: "Bônus", cost: 250, effect: "double_coins" }
+        ];
+
+        const shopItems_gacha2 = [
+            { name: "Demônio de Guerra", rarity: "Lendária", cost: 600 },
+            { name: "Arcanjo", rarity: "Mítica", cost: 5000 },
+            { name: "2x Sorte (3 min)", rarity: "Bônus", cost: 400, effect: "double_luck" },
+            { name: "2x Moedas (15 min)", rarity: "Bônus", cost: 250, effect: "double_coins" },
+            { name: "Fênix das Preces (MAX)", rarity: "Lendária", cost: 1200, effect: "max_level_card" }
+        ];
+        
+        let currentShopItems = shopItems_gacha1;
+        
+        let selectedBattleCards = [];
+        const battleDeckSlots = document.querySelectorAll('.deck-slot');
+
+        // Variáveis para o sistema de venda/bloqueio/fusão
+        let isSelling = false;
+        let isLocking = false;
+        let isMerging = false;
+        let mergeTargetCardId = null;
+        let mergeFuelCardIds = [];
+        let selectedCardsToSell = [];
+
+        // Elementos do DOM
+        const mainMenu = document.getElementById('main-menu');
+        const playButton = document.getElementById('play-button');
+        const howToPlayButton = document.getElementById('how-to-play-button');
+        const howToPlayScreen = document.getElementById('how-to-play');
+        const backToMenuButton = document.getElementById('back-to-menu-button');
+        const mainGameScreen = document.getElementById('main-game');
+        
+        const codeButton = document.getElementById('code-button');
+        const codeRedeemModal = document.getElementById('code-redeem-modal');
+        const codeInput = document.getElementById('code-input');
+        const codeMessage = document.getElementById('code-message');
+        const redeemCodeButton = document.getElementById('redeem-code-button');
+        const closeCodeModalButton = document.getElementById('close-code-modal-button');
+
+        const coinCountElem = document.getElementById('coin-count');
+        const playerTotalWinsElem = document.getElementById('player-total-wins');
+        const gachaButton1 = document.getElementById('gacha-button');
+        const gachaButton2 = document.getElementById('gacha-2-button');
+        const buyGacha2Button = document.getElementById('buy-gacha-2-button');
+        const resultCard = document.getElementById('result-card');
+        const cardNameElem = document.getElementById('card-name');
+        const cardRarityElem = document.getElementById('card-rarity');
+        const cardImageElem = document.getElementById('card-image');
+        const inventoryContainer = document.getElementById('inventory-container');
+        const inventoryGrid = document.getElementById('inventory-grid');
+        const battleContainer = document.getElementById('battle-container');
+        const battleInfoElem = document.getElementById('battle-info');
+        const playerHandDiv = document.getElementById('player-hand');
+        const playerDropZone = document.getElementById('player-drop-zone');
+        const botPlayedCardDiv = document.getElementById('bot-played-card');
+        const battleLogDiv = document.getElementById('battle-log');
+        const playerScoreElem = document.getElementById('player-score');
+        const botScoreElem = document.getElementById('bot-score');
+        const shopToggleButton = document.getElementById('shop-toggle-button');
+        const shopContainer = document.getElementById('shop-container');
+        const shopItemsContainer = document.getElementById('shop-items-container');
+        const shopCloseBtn = document.getElementById('shop-close');
+        const coinBonusTimerElem = document.getElementById('coin-bonus-timer');
+        const bonusTimeLeftElem = document.getElementById('bonus-time-left');
+        const luckBonusTimerElem = document.getElementById('luck-bonus-timer');
+        const luckTimeLeftElem = document.getElementById('luck-time-left');
+        const cardSelectionContainer = document.getElementById('card-selection-container');
+        const cardSelectionGrid = document.getElementById('card-selection-grid');
+        const startBattleButton = document.getElementById('start-battle-button');
+        const cancelSelectionButton = document.getElementById('cancel-selection-button');
+        
+        const sellButton = document.getElementById('sell-button');
+        const lockButton = document.getElementById('lock-button');
+        const mergeButton = document.getElementById('merge-button');
+        const confirmSellButton = document.getElementById('confirm-sell-button');
+        const cancelSellButton = document.getElementById('cancel-sell-button');
+        const sellInfoDiv = document.getElementById('sell-info');
+        const sellTotalCoinsElem = document.getElementById('sell-total-coins');
+        const lockInfoDiv = document.getElementById('lock-info');
+        const doneLockButton = document.getElementById('done-lock-button');
+        
+        const mergeInfoDiv = document.getElementById('merge-info');
+        const mergeStepInfoElem = document.getElementById('merge-step-info');
+        const confirmMergeButton = document.getElementById('confirm-merge-button');
+        const cancelMergeButton = document.getElementById('cancel-merge-button');
+
+        // --- SISTEMA DE SAVE ---
+        function saveGame() {
+            const gameState = {
+                coins,
+                inventory,
+                playerTotalWins,
+                isGacha2Purchased,
+                botCardDeck: botCardDeck === cards_gacha1 ? 'gacha1' : 'gacha2',
+                nextCardId,
+                isCoinBonusActive,
+                isLuckBonusActive,
+                isCodeRedeemed
+            };
+            localStorage.setItem('gachaGameSave', JSON.stringify(gameState));
+            console.log("Jogo salvo!");
+        }
+
+        function loadGame() {
+            const savedState = localStorage.getItem('gachaGameSave');
+            if (savedState) {
+                const gameState = JSON.parse(savedState);
+                coins = gameState.coins;
+                inventory = gameState.inventory;
+                playerTotalWins = gameState.playerTotalWins;
+                isGacha2Purchased = gameState.isGacha2Purchased;
+                botCardDeck = gameState.botCardDeck === 'gacha1' ? cards_gacha1 : cards_gacha2;
+                currentShopItems = isGacha2Purchased ? shopItems_gacha2 : shopItems_gacha1;
+                nextCardId = gameState.nextCardId;
+                isCoinBonusActive = gameState.isCoinBonusActive;
+                isLuckBonusActive = gameState.isLuckBonusActive;
+                isCodeRedeemed = gameState.isCodeRedeemed;
+                
+                // Atualiza cartas de saves antigos
+                inventory.forEach(card => {
+                    if (card.level === undefined) card.level = 0;
+                    if (card.xp === undefined) card.xp = 0;
+                    if (card.basePd === undefined) card.basePd = card.pd;
+                });
+
+                if (isGacha2Purchased) {
+                    gachaButton2.style.display = 'block';
+                    buyGacha2Button.style.display = 'none';
+                }
+                
+                if (isCoinBonusActive) {
+                    // Reiniciar timer do bônus de moedas se estiver ativo
+                    activateCoinBonus(true);
+                }
+                if (isLuckBonusActive) {
+                    // Reiniciar timer do bônus de sorte se estiver ativo
+                    activateLuckBonus(true);
+                }
+                
+                console.log("Jogo carregado!");
+            }
+        }
+        
+        // Inicializa o jogo
+        loadGame();
+        updateCoinDisplay();
+        updateWinCounter();
+
+        // --- FUNÇÕES DE LÓGICA DO JOGO ---
+
+        function updateCoinDisplay() {
+            coinCountElem.textContent = coins;
+            gachaButton1.disabled = coins < GACHA_COST_1;
+            gachaButton2.disabled = coins < GACHA_COST_2;
+            buyGacha2Button.disabled = coins < 1000;
+        }
+
+        function updateWinCounter() {
+            playerTotalWinsElem.textContent = playerTotalWins;
+            if (playerTotalWins >= WIN_UNLOCK_THRESHOLD && !isGacha2Purchased) {
+                buyGacha2Button.style.display = 'block';
+            }
+        }
+        
+        function getGachaCards(gachaType) {
+            let cards;
+            if (gachaType === 1) {
+                cards = isLuckBonusActive ? cards_gacha1_lucky : cards_gacha1;
+            } else {
+                cards = isLuckBonusActive ? cards_gacha2_lucky : cards_gacha2;
+            }
+            return cards;
+        }
+
+        function getRandomCard(cardList) {
+            const totalProb = cardList.reduce((sum, card) => sum + card.prob, 0);
+            let rand = Math.random() * totalProb;
+
+            for (const card of cardList) {
+                if (rand < card.prob) {
+                    return card;
+                }
+                rand -= card.prob;
+            }
+            return cardList[0];
+        }
+
+        function displayCard(card) {
+            resultCard.classList.remove('show', 'rarity-common', 'rarity-rare', 'rarity-epic', 'rarity-legendary', 'rarity-mythic', 'rarity-divino');
+            
+            setTimeout(() => {
+                cardNameElem.textContent = card.name;
+                cardRarityElem.innerHTML = `${card.rarity} ${generateStars(card.stars)}`;
+                cardImageElem.innerHTML = `PD: ${card.pd}`;
+                if (card.level > 0) {
+                    cardImageElem.innerHTML += `<div class="card-level">Nível: ${card.level}</div>`;
+                }
+                resultCard.classList.add(card.color, 'show');
+            }, 300);
+        }
+
+        function generateStars(numStars) {
+            let starsHtml = '';
+            for (let i = 0; i < numStars; i++) {
+                starsHtml += '<span class="star">★</span>';
+            }
+            return starsHtml;
+        }
+
+        function addToInventory(card) {
+            if (inventory.length < INVENTORY_LIMIT) {
+                const newCard = { ...card, id: nextCardId++, isLocked: false, level: card.level || 0, xp: card.xp || 0, basePd: card.basePd || card.pd };
+                inventory.push(newCard);
+                console.log("Carta adicionada ao inventário:", newCard.name);
+                saveGame();
+            } else {
+                console.log("Inventário cheio! Limite de 50 cartas alcançado.");
+            }
+        }
+
+        function updateInventoryDisplay() {
+            inventoryGrid.innerHTML = '';
+            inventory.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `inventory-card ${card.color}`;
+                cardDiv.dataset.cardId = card.id;
+                if (card.isLocked) cardDiv.classList.add('locked');
+                if (isSelling && selectedCardsToSell.includes(card.id)) {
+                    cardDiv.classList.add('selected-for-sell');
+                }
+                if (isMerging) {
+                    if (card.id === mergeTargetCardId) {
+                        cardDiv.classList.add('selected-for-merge-target');
+                    } else if (mergeFuelCardIds.includes(card.id)) {
+                        cardDiv.classList.add('selected-for-merge-fuel');
+                    }
+                }
+                cardDiv.innerHTML = `
+                    <div class="inventory-card-image">
+                        <span class="pd-display">PD: ${card.pd}</span>
+                        ${card.level > 0 ? `<span class="level-display">Nível: ${card.level}</span>` : ''}
+                    </div>
+                    <div class="inventory-card-name">${card.name}</div>
+                    <div class="inventory-card-rarity">${card.rarity} ${generateStars(card.stars)}</div>
+                    ${isMerging && card.id === mergeTargetCardId && card.level < MAX_CARD_LEVEL ? `
+                        <p>XP: ${card.xp} / ${xpNeededForLevel[card.level + 1]}</p>
+                        <div class="merge-progress-bar">
+                            <div class="merge-progress" style="width: ${(card.xp / xpNeededForLevel[card.level + 1] * 100) || 0}%;"></div>
+                        </div>
+                    ` : ''}
+                `;
+                inventoryGrid.appendChild(cardDiv);
+            });
+        }
+        
+        // --- LÓGICA DE VENDA E BLOQUEIO E FUNDIR ---
+        function resetInventoryModes() {
+            isSelling = false;
+            isLocking = false;
+            isMerging = false;
+            mergeTargetCardId = null;
+            mergeFuelCardIds = [];
+            selectedCardsToSell = [];
+            sellInfoDiv.style.display = 'none';
+            lockInfoDiv.style.display = 'none';
+            mergeInfoDiv.style.display = 'none';
+            sellButton.disabled = false;
+            lockButton.disabled = false;
+            mergeButton.disabled = false;
+        }
+
+        function startSellMode() {
+            resetInventoryModes();
+            isSelling = true;
+            sellButton.disabled = true;
+            sellInfoDiv.style.display = 'block';
+            sellTotalCoinsElem.textContent = 0;
+            updateInventoryDisplay();
+        }
+
+        function confirmSell() {
+            if (selectedCardsToSell.length === 0) {
+                alert("Nenhuma carta selecionada para venda.");
+                return;
+            }
+
+            const totalCoins = selectedCardsToSell.reduce((sum, cardId) => {
+                const card = inventory.find(c => c.id === cardId);
+                return sum + (card ? raritySellValues[card.rarity] : 0);
+            }, 0);
+            
+            if (confirm(`Tem certeza que deseja vender as ${selectedCardsToSell.length} cartas por ${totalCoins} moedas?`)) {
+                inventory = inventory.filter(card => !selectedCardsToSell.includes(card.id));
+                coins += totalCoins;
+                
+                resetInventoryModes();
+                updateCoinDisplay();
+                updateInventoryDisplay();
+                saveGame();
+            }
+        }
+        
+        function cancelSell() {
+            resetInventoryModes();
+            updateInventoryDisplay();
+        }
+
+        function startLockMode() {
+            resetInventoryModes();
+            isLocking = true;
+            lockButton.disabled = true;
+            lockInfoDiv.style.display = 'block';
+            updateInventoryDisplay();
+        }
+        
+        function toggleCardLock(cardId) {
+            const card = inventory.find(c => c.id === cardId);
+            if (card) {
+                card.isLocked = !card.isLocked;
+                saveGame();
+            }
+            updateInventoryDisplay();
+        }
+        
+        function doneLocking() {
+            resetInventoryModes();
+            updateInventoryDisplay();
+        }
+        
+        function startMergeMode() {
+            resetInventoryModes();
+            isMerging = true;
+            mergeButton.disabled = true;
+            mergeInfoDiv.style.display = 'block';
+            mergeStepInfoElem.textContent = "Passo 1: Clique na carta para aprimorar.";
+            confirmMergeButton.style.display = 'none';
+            updateInventoryDisplay();
+        }
+        
+        function confirmMerge() {
+            if (mergeTargetCardId === null || mergeFuelCardIds.length === 0) {
+                alert("Selecione uma carta para aprimorar e pelo menos uma para consumir.");
+                return;
+            }
+            
+            if (!confirm(`Tem certeza que deseja fundir ${mergeFuelCardIds.length} cartas na carta selecionada?`)) {
+                return;
+            }
+            
+            const targetCard = inventory.find(card => card.id === mergeTargetCardId);
+            if (!targetCard) return;
+            
+            let totalXpGained = 0;
+            const consumedCardIds = [];
+            
+            mergeFuelCardIds.forEach(fuelId => {
+                const fuelCard = inventory.find(card => card.id === fuelId);
+                if (fuelCard) {
+                    totalXpGained += rarityXpValues[fuelCard.rarity];
+                    consumedCardIds.push(fuelId);
+                }
+            });
+            
+            targetCard.xp += totalXpGained;
+            let leveledUp = false;
+            
+            while(targetCard.level < MAX_CARD_LEVEL && targetCard.xp >= xpNeededForLevel[targetCard.level + 1]) {
+                targetCard.xp -= xpNeededForLevel[targetCard.level + 1];
+                targetCard.level++;
+                targetCard.pd = targetCard.basePd + (targetCard.level * 5);
+                leveledUp = true;
+            }
+            
+            if (targetCard.level === MAX_CARD_LEVEL) {
+                targetCard.xp = 0; // Reseta o XP ao atingir o nível máximo
+            }
+            
+            inventory = inventory.filter(card => !consumedCardIds.includes(card.id));
+
+            alert(`Fusão concluída! A carta ${targetCard.name} ganhou ${totalXpGained} XP. ${leveledUp ? `Subiu para o Nível ${targetCard.level}!` : ''}`);
+            
+            resetInventoryModes();
+            updateInventoryDisplay();
+            saveGame();
+        }
+
+        function cancelMerge() {
+            resetInventoryModes();
+            updateInventoryDisplay();
+        }
+
+        function handleMergeSelection(cardId) {
+            const card = inventory.find(c => c.id === cardId);
+            if (!card) return;
+            
+            if (card.isLocked) {
+                alert("Você não pode usar cartas bloqueadas para fusão!");
+                return;
+            }
+            
+            if (mergeTargetCardId === null) {
+                // Passo 1: Selecionar a carta principal
+                if (card.level >= MAX_CARD_LEVEL) {
+                    alert(`A carta ${card.name} já atingiu o nível máximo (5)!`);
+                    return;
+                }
+                mergeTargetCardId = cardId;
+                mergeFuelCardIds = [];
+                mergeStepInfoElem.textContent = "Passo 2: Clique em até 10 cartas para consumir.";
+                updateInventoryDisplay();
+            } else if (cardId === mergeTargetCardId) {
+                // Deselecionar a carta principal
+                mergeTargetCardId = null;
+                mergeFuelCardIds = [];
+                confirmMergeButton.style.display = 'none';
+                mergeStepInfoElem.textContent = "Passo 1: Clique na carta para aprimorar.";
+                updateInventoryDisplay();
+            } else {
+                // Passo 2: Selecionar as cartas de combustível
+                const index = mergeFuelCardIds.indexOf(cardId);
+                if (index > -1) {
+                    mergeFuelCardIds.splice(index, 1);
+                } else {
+                    if (mergeFuelCardIds.length < 10) {
+                        mergeFuelCardIds.push(cardId);
+                    } else {
+                        alert("Você só pode selecionar no máximo 10 cartas para a fusão.");
+                    }
+                }
+                confirmMergeButton.style.display = mergeFuelCardIds.length > 0 ? 'block' : 'none';
+                updateInventoryDisplay();
+            }
+        }
+
+        // --- LÓGICA DE BATALHA ---
+        
+        function showCardSelectionScreen() {
+            if (inventory.length < BATTLE_CARD_LIMIT) {
+                alert(`Você precisa de pelo menos ${BATTLE_CARD_LIMIT} cartas para batalhar!`);
+                return;
+            }
+            cardSelectionContainer.classList.add('show');
+            renderCardSelectionGrid();
+        }
+        
+        function renderCardSelectionGrid() {
+            cardSelectionGrid.innerHTML = '';
+            inventory.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `selection-card ${card.color}`;
+                cardDiv.dataset.cardId = card.id;
+                cardDiv.draggable = true;
+                cardDiv.innerHTML = `
+                    <div class="card-name">${card.name}</div>
+                    <div class="card-pd">PD: ${card.pd}</div>
+                    ${card.level > 0 ? `<div class="card-level">Nvl: ${card.level}</div>` : ''}
+                `;
+                cardSelectionGrid.appendChild(cardDiv);
+            });
+            updateDeckSlots();
+        }
+        
+        function updateDeckSlots() {
+            battleDeckSlots.forEach((slot, index) => {
+                const cardId = selectedBattleCards[index];
+                slot.innerHTML = '';
+                slot.classList.remove('full');
+                if (cardId !== undefined) {
+                    const card = inventory.find(c => c.id === cardId);
+                    slot.classList.add('full', card.color);
+                    slot.innerHTML = `
+                        <div class="card-name">${card.name}</div>
+                        <div class="card-pd">PD: ${card.pd}</div>
+                        ${card.level > 0 ? `<div class="card-level">Nvl: ${card.level}</div>` : ''}
+                    `;
+                }
+            });
+            
+            document.querySelectorAll('.selection-card').forEach(cardDiv => {
+                const cardId = parseInt(cardDiv.dataset.cardId);
+                if (selectedBattleCards.includes(cardId)) {
+                    cardDiv.classList.add('selected');
+                } else {
+                    cardDiv.classList.remove('selected');
+                }
+            });
+        }
+        
+        function startBattle() {
+            cardSelectionContainer.classList.remove('show');
+            battleContainer.classList.add('show');
+
+            botBattleCards = [];
+            for (let i = 0; i < BATTLE_CARD_LIMIT; i++) {
+                const botCard = getRandomCard(botCardDeck);
+                botBattleCards.push({ ...botCard, id: nextCardId++ });
+            }
+
+            playerBattleCards = selectedBattleCards.map(cardId => inventory.find(c => c.id === cardId));
+            
+            renderPlayerHand();
+            nextTurn();
+        }
+
+        function nextTurn() {
+            if (currentTurn >= BATTLE_CARD_LIMIT || playerBattleCards.length === 0 || botBattleCards.length === 0) {
+                endBattle();
+                return;
+            }
+
+            currentTurn++;
+            battleInfoElem.textContent = `Turno ${currentTurn} de ${BATTLE_CARD_LIMIT}`;
+            battleLogDiv.textContent = '';
+            isTurnInProgress = true;
+
+            playerDropZone.innerHTML = '';
+            playerDropZone.style.opacity = 0.2;
+            botPlayedCardDiv.innerHTML = '';
+            botPlayedCardDiv.style.opacity = 0;
+            
+            setTimeout(botPlays, 1500);
+        }
+        
+        function botPlays() {
+            if (!isTurnInProgress) return;
+
+            const botCardIndex = Math.floor(Math.random() * botBattleCards.length);
+            botPlayedCard = botBattleCards[botCardIndex];
+
+            displayPlayedCard(botPlayedCardDiv, botPlayedCard);
+            battleInfoElem.textContent = `Turno ${currentTurn}: O BOT jogou! Arraste sua carta.`;
+
+            botBattleCards.splice(botCardIndex, 1);
+        }
+
+        function renderPlayerHand() {
+            playerHandDiv.innerHTML = '';
+            playerBattleCards.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `hand-card ${card.color}`;
+                cardDiv.dataset.cardId = card.id;
+                cardDiv.draggable = true;
+                cardDiv.innerHTML = `
+                    <div class="card-name">${card.name}</div>
+                    <div class="card-pd">PD: ${card.pd}</div>
+                    ${card.level > 0 ? `<div class="card-level">Nvl: ${card.level}</div>` : ''}
+                `;
+                playerHandDiv.appendChild(cardDiv);
+            });
+        }
+        
+        function playTurn(playerCard, draggedCardElement) {
+            isTurnInProgress = false;
+
+            displayPlayedCard(playerDropZone, playerCard);
+
+            let resultText = '';
+            if (playerCard.pd > botPlayedCard.pd) {
+                playerScore++;
+                resultText = `Você venceu o turno! (+1 ponto)`;
+            } else if (botPlayedCard.pd > playerCard.pd) {
+                botScore++;
+                resultText = `O BOT venceu o turno! (+1 ponto)`;
+            } else {
+                resultText = `Empate!`;
+            }
+            
+            playerScoreElem.textContent = playerScore;
+            botScoreElem.textContent = botScore;
+            battleLogDiv.textContent = resultText;
+            
+            const playerCardIndex = playerBattleCards.findIndex(card => card.id === playerCard.id);
+            if (playerCardIndex !== -1) {
+                playerBattleCards.splice(playerCardIndex, 1);
+            }
+            draggedCardElement.remove();
+            
+            setTimeout(nextTurn, 2000);
+        }
+
+        function displayPlayedCard(element, card) {
+            element.innerHTML = `
+                <div class="card-name">${card.name}</div>
+                <div class="card-pd">PD: ${card.pd}</div>
+                ${card.level > 0 ? `<div class="card-level">Nvl: ${card.level}</div>` : ''}
+            `;
+            element.className = `arena-card ${card.color}`;
+            element.style.opacity = 1;
+        }
+
+        function endBattle() {
+            let finalResultText = '';
+            let reward;
+            
+            if (botCardDeck === cards_gacha2) {
+                reward = VICTORY_REWARD_GACHA2;
+            } else {
+                reward = VICTORY_REWARD_GACHA1;
+            }
+
+            if (isCoinBonusActive) {
+                reward *= 2;
+            }
+
+            if (playerScore > botScore) {
+                finalResultText = `VITÓRIA! Final: ${playerScore} x ${botScore} (+${reward} moedas)`;
+                battleLogDiv.className = 'battle-log winner';
+                coins += reward;
+                playerTotalWins++;
+                updateWinCounter();
+            } else if (botScore > playerScore) {
+                finalResultText = `DERROTA! Final: ${playerScore} x ${botScore}`;
+                battleLogDiv.className = 'battle-log loser';
+            } else {
+                finalResultText = `EMPATE! Final: ${playerScore} x ${botScore}`;
+                battleLogDiv.className = 'battle-log draw';
+            }
+            battleInfoElem.textContent = "Batalha encerrada!";
+            battleLogDiv.textContent = finalResultText;
+            updateCoinDisplay();
+            playerHandDiv.innerHTML = '';
+            saveGame();
+            
+            setTimeout(() => {
+                battleContainer.classList.remove('show');
+                
+                playerBattleCards = [];
+                botBattleCards = [];
+                playerScore = 0;
+                botScore = 0;
+                currentTurn = 0;
+                botPlayedCard = null;
+                isTurnInProgress = false;
+                selectedBattleCards = [];
+                
+                playerScoreElem.textContent = playerScore;
+                botScoreElem.textContent = botScore;
+                battleLogDiv.textContent = '';
+                battleLogDiv.className = 'battle-log';
+            }, 5000);
+        }
+
+        function handleGacha2Purchase() {
+            const GACHA_2_UNLOCK_COST = 1000;
+            if (coins >= GACHA_2_UNLOCK_COST) {
+                coins -= GACHA_2_UNLOCK_COST;
+                isGacha2Purchased = true;
+                botCardDeck = cards_gacha2;
+                currentShopItems = shopItems_gacha2;
+                buyGacha2Button.style.display = 'none';
+                gachaButton2.style.display = 'block';
+                updateCoinDisplay();
+                saveGame();
+                alert("Parabéns! Você comprou a Roleta Forte, e o BOT agora usa cartas mais poderosas! A loja foi atualizada.");
+            } else {
+                alert("Moedas insuficientes para comprar a Roleta Forte!");
+            }
+        }
+
+        // --- LÓGICA DA LOJA (RETRABALHADO) ---
+
+        function toggleShop() {
+            const isOpen = shopContainer.classList.toggle('open');
+            if (isOpen) {
+                renderShopItems();
+            }
+        }
+
+        function renderShopItems() {
+            shopItemsContainer.innerHTML = '';
+            currentShopItems.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'shop-item';
+                itemDiv.dataset.itemName = item.name;
+
+                let itemClass = '';
+                let cardData = null;
+                if (item.effect === "double_coins") {
+                    itemClass = 'rarity-legendary';
+                } else if (item.effect === "double_luck") {
+                    itemClass = 'rarity-epic';
+                } else if (item.effect === "max_level_card") {
+                    cardData = cards_gacha1.find(c => c.name === "Fênix das Preces");
+                    itemClass = cardData.color;
+                } else {
+                    cardData = cards_gacha1.find(c => c.name === item.name) || cards_gacha2.find(c => c.name === item.name);
+                    if (cardData) itemClass = cardData.color;
+                }
+
+                if (coins < item.cost) {
+                    itemDiv.classList.add('disabled');
+                }
+
+                itemDiv.innerHTML = `
+                    <div class="item-info ${itemClass}">
+                        <div class="item-name">${item.name}</div>
+                        <div>${cardData ? `PD: ${cardData.pd}` : item.effect === 'double_luck' ? 'Dobra chance de cartas raras' : 'Dobra ganho de moedas'}</div>
+                    </div>
+                    <div class="item-cost">Custo: ${item.cost}</div>
+                `;
+                shopItemsContainer.appendChild(itemDiv);
+            });
+        }
+
+        function handleShopPurchase(itemName) {
+            const item = currentShopItems.find(i => i.name === itemName);
+            if (item && coins >= item.cost) {
+                coins -= item.cost;
+                updateCoinDisplay();
+                
+                if (item.effect === 'double_coins') {
+                    activateCoinBonus(false);
+                } else if (item.effect === 'double_luck') {
+                    activateLuckBonus(false);
+                } else if (item.effect === 'max_level_card') {
+                    const baseCard = cards_gacha1.find(c => c.name === "Fênix das Preces");
+                    const maxLevelCard = {
+                        ...baseCard,
+                        pd: 75,
+                        basePd: 50,
+                        level: 5,
+                        xp: 0
+                    };
+                    addToInventory(maxLevelCard);
+                    alert(`Você comprou a carta ${maxLevelCard.name} (Nível MAX)!`);
+                } else {
+                    const purchasedCard = cards_gacha1.find(c => c.name === item.name) || cards_gacha2.find(c => c.name === item.name);
+                    if (purchasedCard) {
+                        addToInventory(purchasedCard);
+                        alert(`Você comprou a carta ${purchasedCard.name}!`);
+                    }
+                }
+                
+                renderShopItems();
+                saveGame();
+            } else {
+                alert("Moedas insuficientes!");
+            }
+        }
+        
+        function activateCoinBonus(fromLoad = false) {
+            if (isCoinBonusActive && !fromLoad) {
+                alert("O bônus de moedas já está ativo!");
+                return;
+            }
+            isCoinBonusActive = true;
+            coinBonusTimerElem.style.display = 'block';
+            let timeLeft = fromLoad ? 20 * 60 : 15 * 60; // 15 minutos do novo item
+            
+            if (coinBonusTimer) clearInterval(coinBonusTimer);
+
+            coinBonusTimer = setInterval(() => {
+                timeLeft--;
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                bonusTimeLeftElem.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(coinBonusTimer);
+                    isCoinBonusActive = false;
+                    coinBonusTimerElem.style.display = 'none';
+                    alert("O bônus de 2x moedas terminou!");
+                    saveGame();
+                }
+            }, 1000);
+        }
+        
+        function activateLuckBonus(fromLoad = false) {
+            if (isLuckBonusActive && !fromLoad) {
+                alert("O bônus de sorte já está ativo!");
+                return;
+            }
+            isLuckBonusActive = true;
+            luckBonusTimerElem.style.display = 'block';
+            let timeLeft = fromLoad ? 3 * 60 : 3 * 60; // 3 minutos
+            
+            if (luckBonusTimer) clearInterval(luckBonusTimer);
+
+            luckBonusTimer = setInterval(() => {
+                timeLeft--;
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                luckTimeLeftElem.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(luckBonusTimer);
+                    isLuckBonusActive = false;
+                    luckBonusTimerElem.style.display = 'none';
+                    alert("O bônus de 2x sorte terminou!");
+                    saveGame();
+                }
+            }, 1000);
+        }
+        
+        function redeemCode() {
+            const code = codeInput.value.trim().toUpperCase();
+            if (isCodeRedeemed) {
+                codeMessage.textContent = 'Este código já foi resgatado.';
+                codeMessage.style.color = 'red';
+            } else if (code === REDEEM_CODE) {
+                coins += REDEEM_REWARD;
+                isCodeRedeemed = true;
+                updateCoinDisplay();
+                saveGame();
+                codeMessage.textContent = `Código resgatado! Você recebeu ${REDEEM_REWARD} moedas!`;
+                codeMessage.style.color = 'green';
+            } else {
+                codeMessage.textContent = 'Código inválido.';
+                codeMessage.style.color = 'red';
+            }
+        }
+
+
+        // --- EVENT LISTENERS ---
+        
+        // Eventos do Menu Principal
+        playButton.addEventListener('click', () => {
+            mainMenu.classList.remove('show');
+            mainGameScreen.classList.add('show');
+        });
+        
+        howToPlayButton.addEventListener('click', () => {
+            mainMenu.classList.remove('show');
+            howToPlayScreen.classList.add('show');
+        });
+        
+        backToMenuButton.addEventListener('click', () => {
+            howToPlayScreen.classList.remove('show');
+            mainMenu.classList.add('show');
+        });
+        
+        // NOVO: Eventos do botão de Código
+        codeButton.addEventListener('click', () => {
+            mainMenu.classList.remove('show');
+            codeRedeemModal.classList.add('show');
+            codeInput.value = '';
+            codeMessage.textContent = '';
+        });
+        
+        closeCodeModalButton.addEventListener('click', () => {
+            codeRedeemModal.classList.remove('show');
+            mainMenu.classList.add('show');
+        });
+        
+        redeemCodeButton.addEventListener('click', redeemCode);
+
+        gachaButton1.addEventListener('click', () => {
+            if (coins >= GACHA_COST_1) {
+                coins -= GACHA_COST_1;
+                updateCoinDisplay();
+                const card = getRandomCard(getGachaCards(1));
+                displayCard(card);
+                addToInventory(card);
+                saveGame();
+            }
+        });
+        
+        gachaButton2.addEventListener('click', () => {
+            if (coins >= GACHA_COST_2) {
+                coins -= GACHA_COST_2;
+                updateCoinDisplay();
+                const card = getRandomCard(getGachaCards(2));
+                displayCard(card);
+                addToInventory(card);
+                saveGame();
+            } else {
+                alert("Moedas insuficientes para a Roleta Forte!");
+            }
+        });
+        
+        buyGacha2Button.addEventListener('click', handleGacha2Purchase);
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'e' || event.key === 'E') {
+                if (inventoryContainer.classList.contains('show')) {
+                    inventoryContainer.classList.remove('show');
+                } else {
+                    updateInventoryDisplay();
+                    inventoryContainer.classList.add('show');
+                }
+            }
+            if (event.key === 'ArrowRight' && mainGameScreen.classList.contains('show') && !battleContainer.classList.contains('show')) {
+                showCardSelectionScreen();
+            }
+        });
+
+        // Eventos do novo sistema de inventário
+        sellButton.addEventListener('click', startSellMode);
+        lockButton.addEventListener('click', startLockMode);
+        mergeButton.addEventListener('click', startMergeMode);
+        
+        confirmSellButton.addEventListener('click', confirmSell);
+        cancelSellButton.addEventListener('click', cancelSell);
+        doneLockButton.addEventListener('click', doneLocking);
+        confirmMergeButton.addEventListener('click', confirmMerge);
+        cancelMergeButton.addEventListener('click', cancelMerge);
+
+        inventoryGrid.addEventListener('click', (event) => {
+            const cardDiv = event.target.closest('.inventory-card');
+            if (!cardDiv) return;
+
+            const cardId = parseInt(cardDiv.dataset.cardId);
+            const card = inventory.find(c => c.id === cardId);
+
+            if (isSelling) {
+                if (card.isLocked) {
+                    alert("Você não pode vender uma carta bloqueada!");
+                    return;
+                }
+                const index = selectedCardsToSell.indexOf(cardId);
+                if (index > -1) {
+                    selectedCardsToSell.splice(index, 1);
+                    cardDiv.classList.remove('selected-for-sell');
+                } else {
+                    selectedCardsToSell.push(cardId);
+                    cardDiv.classList.add('selected-for-sell');
+                }
+                const totalCoins = selectedCardsToSell.reduce((sum, id) => sum + (raritySellValues[inventory.find(c => c.id === id).rarity] || 0), 0);
+                sellTotalCoinsElem.textContent = totalCoins;
+            } else if (isLocking) {
+                toggleCardLock(cardId);
+            } else if (isMerging) {
+                handleMergeSelection(cardId);
+            }
+        });
+        
+        playerHandDiv.addEventListener('dragstart', (event) => {
+            const cardElement = event.target.closest('.hand-card');
+            if (isTurnInProgress && cardElement) {
+                event.dataTransfer.setData('text/plain', cardElement.dataset.cardId);
+                event.dataTransfer.effectAllowed = "move";
+            }
+        });
+
+        playerDropZone.addEventListener('dragover', (event) => {
+            if (isTurnInProgress) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+            }
+        });
+
+        playerDropZone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            if (isTurnInProgress) {
+                const cardId = event.dataTransfer.getData('text/plain');
+                const playerCard = playerBattleCards.find(card => card.id == cardId);
+                const draggedCardElement = document.querySelector(`.hand-card[data-card-id="${cardId}"]`);
+                
+                if (playerCard && draggedCardElement) {
+                    playTurn(playerCard, draggedCardElement);
+                }
+            }
+        });
+        
+        // Novos Eventos da Loja (retrabalhado)
+        shopToggleButton.addEventListener('click', toggleShop);
+        shopCloseBtn.addEventListener('click', toggleShop);
+        
+        shopItemsContainer.addEventListener('click', (event) => {
+            const item = event.target.closest('.shop-item');
+            if (item && !item.classList.contains('disabled')) {
+                const itemName = item.dataset.itemName;
+                handleShopPurchase(itemName);
+            }
+        });
+        
+        cardSelectionGrid.addEventListener('dragstart', (event) => {
+            const cardElement = event.target.closest('.selection-card');
+            const cardId = cardElement?.dataset.cardId;
+            if (cardId) {
+                const card = inventory.find(c => c.id == cardId);
+                if (card && !card.isLocked) {
+                    event.dataTransfer.setData('text/plain', cardId);
+                    event.dataTransfer.effectAllowed = "move";
+                } else {
+                    event.preventDefault();
+                }
+            }
+        });
+        
+        battleDeckSlots.forEach(slot => {
+            slot.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+            });
+            slot.addEventListener('drop', (event) => {
+                event.preventDefault();
+                const cardId = parseInt(event.dataTransfer.getData('text/plain'));
+                const card = inventory.find(c => c.id === cardId);
+                const slotIndex = parseInt(event.target.closest('.deck-slot').dataset.slotIndex);
+                
+                if (card && !selectedBattleCards.includes(cardId)) {
+                    selectedBattleCards[slotIndex] = cardId;
+                    updateDeckSlots();
+                }
+            });
+            
+            slot.addEventListener('click', (event) => {
+                const slotIndex = parseInt(event.target.closest('.deck-slot').dataset.slotIndex);
+                if (selectedBattleCards[slotIndex] !== undefined) {
+                    selectedBattleCards[slotIndex] = undefined;
+                    updateDeckSlots();
+                }
+            });
+        });
+        
+        startBattleButton.addEventListener('click', () => {
+            const validCards = selectedBattleCards.filter(id => id !== undefined);
+            if (validCards.length === BATTLE_CARD_LIMIT) {
+                startBattle();
+            } else {
+                alert(`Por favor, selecione exatamente ${BATTLE_CARD_LIMIT} cartas para a batalha.`);
+            }
+        });
+        
+        cancelSelectionButton.addEventListener('click', () => {
+            cardSelectionContainer.classList.remove('show');
+            selectedBattleCards = [];
+            updateDeckSlots();
+            updateCoinDisplay();
+        });
+        
+        window.addEventListener('beforeunload', saveGame);
+        
+    </script>
+
+</body>
+</html>
